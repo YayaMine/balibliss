@@ -8,27 +8,32 @@ class Mauth extends CI_Model {
         $this->load->database();
     }
 
+    // Fungsi untuk verifikasi email dan password
     public function get_pengguna($email, $password) {
         $this->db->where('email', $email);
         $query = $this->db->get('tb_pengguna');
         $user = $query->row();
         
-        // Debugging: Log hasil query dan user data
+        // Debugging: Log hasil query dan data pengguna
         log_message('debug', 'Hasil query get_pengguna: ' . json_encode($user));
         
         if ($user) {
             if (password_verify($password, $user->password)) {
+                // Log keberhasilan login
                 log_message('debug', 'Password berhasil diverifikasi untuk pengguna: ' . $email);
                 return $user;
             } else {
+                // Log jika password salah
                 log_message('error', 'Password salah untuk pengguna dengan email: ' . $email);
             }
         } else {
+            // Log jika email tidak ditemukan
             log_message('error', 'Pengguna dengan email: ' . $email . ' tidak ditemukan');
         }
-        
+    
         return false;
     }
+    
 
     public function email_exists($email) {
         $query = $this->db->get_where('tb_pengguna', ['email' => $email]);
@@ -39,11 +44,16 @@ class Mauth extends CI_Model {
         $query = $this->db->get_where('tb_pengguna', ['no_hp' => $no_hp]);
         return $query->num_rows() > 0;
     }
-
+    
     public function register($data) {
-        return $this->db->insert('tb_pengguna', $data);
+        $this->db->insert('tb_pengguna', $data);
+        if ($this->db->affected_rows() > 0) {
+            return $this->db->insert_id(); // Mengembalikan ID dari pengguna yang baru ditambahkan
+        }
+        return false;
     }
 
+    // Fungsi untuk mendapatkan pengguna berdasarkan email
     public function get_pengguna_by_email($email) {
         $query = $this->db->get_where('tb_pengguna', ['email' => $email]);
         $result = $query->row();
@@ -54,6 +64,7 @@ class Mauth extends CI_Model {
         return $result;
     }
     
+    // Fungsi untuk mendapatkan pengguna berdasarkan ID
     public function get_user_by_id($id_user) {
         $this->db->where('id_user', $id_user);
         $query = $this->db->get('tb_pengguna');
@@ -79,12 +90,16 @@ class Mauth extends CI_Model {
         return $this->db->delete('tb_pengguna');
     }
 
+    public function activate_account($email) {
+        $this->db->where('email', $email);
+        return $this->db->update('tb_pengguna', ['is_active' => 1]);
+    }
+
     public function get_role($email) {
         $this->db->select('level');
         $this->db->where('email', $email);
-        $query = $this->db->get('users');
+        $query = $this->db->get('tb_pengguna');
         return $query->row()->level ?? null;
     }
     
 }
-?>
