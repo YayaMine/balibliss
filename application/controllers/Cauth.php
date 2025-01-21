@@ -10,7 +10,6 @@ class Cauth extends CI_Controller {
         $this->load->helper('url');
     }
 
-    // Halaman login
     public function index() {
         $this->load->view('auth/login');
     }
@@ -19,76 +18,24 @@ class Cauth extends CI_Controller {
         $this->load->view('auth/login');
     }
 
-    // Halaman register
     public function register() {
         $this->load->view('auth/register');
     }
 
-    // Fungsi logout
     public function logout() {
         $this->session->sess_destroy();
         redirect('cauth/login');
-    }
+    }    
 
-    // Fungsi proses login
-    public function proseslogin() {
-        $email = $this->input->post('email');
-        $password = $this->input->post('password');
-    
-        // Validasi email dan password
-        if (empty($email) || empty($password)) {
-            $this->session->set_flashdata('pesan', 'Email dan password wajib diisi!');
-            $this->session->set_flashdata('color', 'danger');
-            redirect('cauth/login');
-            return;
-        }
-    
-        // Mencari pengguna berdasarkan email
-        $user = $this->Mauth->get_pengguna_by_email($email);
-    
-        if ($user && password_verify($password, $user->password)) {
-            if ($user->status !== 'aktif') {
-                $this->session->set_flashdata('pesan', 'Akun Anda belum aktif. Silakan cek email untuk aktivasi.');
-                $this->session->set_flashdata('color', 'warning');
-                redirect('cauth/login');
-                return;
-            }
-    
-            // Mengambil pengguna berdasarkan ID setelah login berhasil
-            $user_details = $this->Mauth->get_user_by_id($user->id_user);
-    
-            // Menyimpan data pengguna ke session
-            $session_data = [
-                'id_user' => $user_details->id_user,
-                'nama' => $user_details->nama,
-                'email' => $user_details->email,
-                'level' => $user_details->level,
-                'logged_in' => true
-            ];
-            $this->session->set_userdata($session_data);
-    
-            $this->session->set_flashdata('pesan', 'Login berhasil! Selamat datang ' . $user_details->nama . '.');
-            $this->session->set_flashdata('color', 'success');
-            redirect('cauth/dashboard');
-        } else {
-            $this->session->set_flashdata('pesan', 'Email atau password salah.');
-            $this->session->set_flashdata('color', 'danger');
-            redirect('cauth/login');
-        }
-    }
-    
-    
-
-    // Halaman dashboard
     public function dashboard() {
         $level = $this->session->userdata('level');
-
+        
         if (!$level) {
             $this->session->set_flashdata('pesan', 'Anda harus login terlebih dahulu.');
             $this->session->set_flashdata('color', 'danger');
             redirect('cauth/login');
         }
-
+    
         switch ($level) {
             case 'admin':
                 $this->load->view('admin/dashboard');
@@ -105,8 +52,6 @@ class Cauth extends CI_Controller {
                 redirect('cauth/login');
         }
     }
-
-    // Proses registrasi
     public function prosesregister() {
         $nama = $this->input->post('nama');
         $email = $this->input->post('email');
@@ -114,8 +59,22 @@ class Cauth extends CI_Controller {
         $alamat = $this->input->post('alamat');
         $no_hp = $this->input->post('no_hp');
 
-        if (empty($nama) || empty($alamat) || empty($no_hp)) {
-            $this->session->set_flashdata('pesan', 'Semua kolom wajib diisi!');
+        if (empty($nama)) {
+            $this->session->set_flashdata('pesan', 'Nama tidak boleh kosong!');
+            $this->session->set_flashdata('color', 'danger');
+            redirect('cauth/register');
+            return;
+        }
+
+        if (empty($alamat)) {
+            $this->session->set_flashdata('pesan', 'Alamat tidak boleh kosong!');
+            $this->session->set_flashdata('color', 'danger');
+            redirect('cauth/register');
+            return;
+        }
+
+        if (empty($no_hp)) {
+            $this->session->set_flashdata('pesan', 'Nomor HP tidak boleh kosong!');
             $this->session->set_flashdata('color', 'danger');
             redirect('cauth/register');
             return;
@@ -141,22 +100,29 @@ class Cauth extends CI_Controller {
             'password' => $password,
             'alamat' => $alamat,
             'no_hp' => $no_hp,
-            'level' => 'user',
-            'status' => 'belum aktif'
+            'level' => 'user'
         ];
+
+        $subject = 'Aktivasi Akun';
+        $message = '<html>
+                    <h2>Aktivasi Akun</h2>
+                    <p>Mohon untuk aktivasi akun Anda dengan klik tombol berikut:</p>
+                    <button>Aktivasi</button>
+                    </html>';
+
+        if (empty($subject)) {
+            $subject = 'Aktivasi Akun';  // Tentukan subjek default jika kosong
+        }
+
+        $from = $this->config->item('smtp_user');
+        if (empty($from)) {
+            $from = 'anastasyaa2004@gmail.com';  // Tentukan alamat email default jika kosong
+        }
 
         $result = $this->Mauth->register($data);
         if ($result) {
-            $message = '<html>
-                <h2>Aktivasi Akun</h2>
-                <p>Mohon untuk aktivasi akun Anda dengan klik tombol berikut:</p>
-                <a href="' . base_url() . 'cauth/verify/' . $result . '">Aktivasi</a>
-                </html>';
-            $subject = 'Aktivasi Akun';
-            $from = $this->config->item('smtp_user') ?: 'your_email@gmail.com';
-            $this->send_email($email, $from, $message, $subject);
-
-            $this->session->set_flashdata('pesan', 'Registrasi berhasil! Silakan cek email Anda untuk aktivasi.');
+            $this->send_email($email, $from, $subject, $message);
+            $this->session->set_flashdata('pesan', 'Registrasi berhasil! Silakan login.');
             $this->session->set_flashdata('color', 'success');
             redirect('cauth/login');
         } else {
@@ -166,42 +132,76 @@ class Cauth extends CI_Controller {
         }
     }
 
-    // Verifikasi akun
-    public function verify($user_id) {
-        $user = $this->Mauth->get_user_by_id($user_id);
+    public function send_email($to, $from, $subject, $message){
+        $from = $this->config->item('smtp_user');
 
-        if ($user && $user->status == 'belum aktif') {
-            $this->Mauth->update_user($user_id, ['status' => 'aktif']);
-
-            $this->session->set_flashdata('pesan', 'Akun berhasil diaktifkan. Silakan login.');
-            $this->session->set_flashdata('color', 'success');
-            redirect('cauth/login');
-        } else {
-            $this->session->set_flashdata('pesan', 'Akun tidak valid atau sudah diaktifkan.');
-            $this->session->set_flashdata('color', 'danger');
-            redirect('cauth/login');
-        }
-    }
-
-    // Fungsi untuk mengirim email
-    public function send_email($to, $from, $message, $subject = null) {
-        if (empty($subject)) {
-            $subject = 'Aktivasi Akun';
-        }
-
-        $this->load->library('email', $this->config->item('email'));
         $this->email->set_newline("\r\n");
         $this->email->from($from, 'Pengirim');
         $this->email->to($to);
         $this->email->subject($subject);
         $this->email->message($message);
 
-        if ($this->email->send()) {
-            log_message('debug', 'Email berhasil dikirim ke: ' . $to);
-            return true;
+        if ($this->email->send()){
+            return 'success';
         } else {
-            log_message('error', 'Email gagal dikirim ke: ' . $to . '. Debugger: ' . $this->email->print_debugger());
-            return false;
+            return show_error($this->email->print_debugger());
         }
     }
+
+    public function proseslogin() {
+        $email = $this->input->post('email');
+        $password = $this->input->post('password');
+    
+        // Debugging: Tampilkan nilai input email dan password
+        log_message('debug', 'Email: ' . $email);
+        log_message('debug', 'Password: ' . $password);
+    
+        $user = $this->Mauth->get_pengguna_by_email($email);
+    
+        // Debugging: Periksa apakah pengguna ditemukan
+        if (!$user) {
+            log_message('debug', 'Pengguna tidak ditemukan dengan email: ' . $email);
+            $this->session->set_flashdata('pesan', 'Email atau password salah!');
+            $this->session->set_flashdata('color', 'danger');
+            redirect('cauth/login');
+            return;
+        } else {
+            log_message('debug', 'Pengguna ditemukan: ' . json_encode($user));
+        }
+    
+        // Debugging: Periksa password yang di-hash
+       //  if (!password_verify($password, $user->password)) {
+        //     log_message('debug', 'Password salah untuk pengguna: ' . $email);
+        //     $this->session->set_flashdata('pesan', 'Email atau password salah!');
+        //     $this->session->set_flashdata('color', 'danger');
+           // redirect('cauth/login');
+          //  return; 
+      //  }
+    
+        // Jika berhasil login
+        $this->session->set_userdata('id_user', $user->id_user);
+        $this->session->set_userdata('level', $user->level);
+        $this->session->set_flashdata('pesan', 'Login berhasil!');
+        $this->session->set_flashdata('color', 'success');
+    
+        // Redirect sesuai dengan level pengguna
+        if ($user->level == 'admin') {
+            redirect('Cadmin/dashboard');
+        } elseif ($user->level == 'pengelola') {
+            redirect('Cpengelola/dashboard');
+        } else {
+            redirect('Cpengguna/index');
+        }
+    }    
+    
+    private function check_access($required_level) {
+        $user_level = $this->session->userdata('level');
+        if ($user_level !== $required_level) {
+            $this->session->set_flashdata('pesan', 'Anda tidak memiliki akses ke halaman ini.');
+            $this->session->set_flashdata('color', 'danger');
+            redirect('cauth/login');
+        }
+    }
+
 }
+?>
