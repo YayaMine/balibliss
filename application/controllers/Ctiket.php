@@ -205,6 +205,84 @@ public function payment_notification() {
     }
 }
 
+    public function keranjang() {
+        // Ambil data keranjang dari model
+        $data['cart_data'] = $this->Mtiket->get_cart_data();
+
+        // Periksa apakah data keranjang ada
+        if (empty($data['cart_data'])) {
+            // Jika tidak ada data keranjang, Anda bisa mengatur pesan atau redirect ke halaman lain
+            $data['message'] = 'Keranjang kosong';
+        }
+
+        // Muat view dengan data keranjang
+        $this->load->view('pengguna/keranjang', $data);
+    }
+
+    public function remove($id) {
+                // Pastikan ID valid sebelum menghapus
+                if (!is_numeric($id) || $id <= 0) {
+                    // Jika ID tidak valid, kembalikan pesan kesalahan
+                    echo json_encode(['status' => 'error', 'message' => 'ID tidak valid.']);
+                    return;
+                }
+            
+                // Panggil model untuk menghapus item dari keranjang
+                if ($this->Mtiket->remove_from_cart($id)) {
+                    // Set pesan sukses jika penghapusan berhasil
+                    echo json_encode(['status' => 'success', 'message' => 'Item berhasil dihapus dari keranjang.']);
+                } else {
+                    // Set pesan kesalahan jika penghapusan gagal
+                    echo json_encode(['status' => 'error', 'message' => 'Item berhasil dihapus dari keranjang.']);
+                }
+            }    
+
+    public function ratings() {
+        // Ambil data dari tabel tb_ticket
+        $data['tickets'] = $this->Mtiket->get_all_tickets();
+        
+        // Tampilkan halaman rating dan ulasan dengan data tiket
+        $this->load->view('pengguna/ratings', $data);
+    }
+
+    public function add_review() {
+                // Validasi form
+                $this->form_validation->set_rules('id_wisata', 'Wisata ID', 'required');
+                $this->form_validation->set_rules('rating', 'Rating', 'required|numeric');
+                $this->form_validation->set_rules('review', 'Review', 'required');
+        
+                if ($this->form_validation->run() == FALSE) {
+                    // Jika validasi gagal, kembali ke halaman rating
+                    $this->ratings();
+                } else {
+                    // Tangkap data dari form
+                    $id_wisata = $this->input->post('id_wisata');
+                    $rating = $this->input->post('rating');
+                    $review = $this->input->post('review');
+            
+                    // Siapkan data untuk disimpan
+                    $data_review = [
+                        'id_wisata' => $id_wisata,
+                        'rating' => $rating,
+                        'review' => $review,
+                        'created_at' => date('Y-m-d H:i:s')
+                    ];
+            
+                    // Simpan data rating dan ulasan
+                    $result = $this->Mtiket->save_review($data_review);
+            
+                    if ($result) {
+                        // Set pesan sukses dan redirect
+                        $this->session->set_flashdata('success', 'Review berhasil ditambahkan.');
+                        redirect('Ctiket/ratings');
+                    } else {
+                        // Tampilkan pesan error jika gagal menyimpan
+                        $this->session->set_flashdata('error', 'Gagal menambahkan review.');
+                        redirect('Ctiket/ratings');
+                    }
+                }
+            }
+
 }
 
 
