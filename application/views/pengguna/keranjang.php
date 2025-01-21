@@ -184,7 +184,18 @@ body {
 }
 
 .btn-print {
-    background-color: #3498db; /* Warna biru untuk cetak */
+    background-color:rgb(11, 76, 229);
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    font-weight: 700; /* Font bold */
+}
+
+.btn-print:hover {
+    background-color:rgb(11, 76, 229);;
 }
 
     </style>
