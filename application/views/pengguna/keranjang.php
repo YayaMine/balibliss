@@ -183,6 +183,10 @@ body {
     text-align: center; /* Teks tengah-tengah */
 }
 
+.btn-print {
+    background-color: #3498db; /* Warna biru untuk cetak */
+}
+
     </style>
 </head>
 <body>
@@ -212,6 +216,7 @@ body {
                         </div>
                         <div class="card-small-footer">
                             <a href="#" data-id="<?= htmlspecialchars($item['id_pesanan'], ENT_QUOTES, 'UTF-8') ?>" class="btn-remove">Hapus Checkout</a>
+                            <a href="<?= site_url('Ctiket/cetakpdf/' . htmlspecialchars($item['id_pesanan'], ENT_QUOTES, 'UTF-8')); ?>" class="btn-print">Cetak Tiket</a>
                         </div>
                     </div>
                 <?php endforeach; ?>

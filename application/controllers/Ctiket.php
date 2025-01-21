@@ -283,6 +283,72 @@ public function payment_notification() {
                 }
             }
 
+
+private function get_order_from_midtrans($order_id) {
+                $midtrans_api_url = 'https://api.sandbox.midtrans.com/v2/' . $order_id . '/status';
+                $server_key = $this->config->item('midtrans_server_key');
+                
+                $curl = curl_init();
+                curl_setopt_array($curl, [
+                    CURLOPT_URL => $midtrans_api_url,
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_HTTPHEADER => [
+                        'Authorization: Basic ' . base64_encode($server_key . ':')
+                    ]
+                ]);
+            
+                $response = curl_exec($curl);
+                curl_close($curl);
+            
+                return json_decode($response, true);
+            }
+            
+            public function cetakpdf($id) {
+                // Coba ambil data dari database
+                $data['pesanan'] = $this->Mtiket->get_bayar($id);
+            
+                if (!$data['pesanan']) {
+                    // Jika pesanan tidak ditemukan di database, coba ambil dari Midtrans
+                    $midtrans_order = $this->get_order_from_midtrans('ORDER-' . $id);
+                    
+                    if (!$midtrans_order || $midtrans_order['status_code'] != 200) {
+                        show_error('Pesanan tidak ditemukan di database maupun di Midtrans.');
+                        return;
+                    }
+            
+                    // Simpan data dari Midtrans ke dalam variabel pesanan
+                    $data['pesanan'] = [
+                        'id_pesanan' => $id,
+                        'total_harga' => $midtrans_order['gross_amount'],
+                        'tgl_kunjungan' => date('Y-m-d', strtotime($midtrans_order['transaction_time'])),
+                        'id_wisata' => $midtrans_order['order_id']
+                    ];
+                }
+            
+                // Ambil data wisata berdasarkan id_wisata
+                $data['wisata'] = $this->Mtiket->getWisataById($data['pesanan']['id_wisata']);
+            
+                if (!$data['wisata']) {
+                    show_error('Data wisata tidak ditemukan');
+                    return;
+                }
+            
+                $data = array_merge($data['pesanan'], $data['wisata']);
+            
+                $html = $this->load->view('pengguna/cetak_pdf', $data, true);
+            
+                $this->load->library('pdf');
+                $pdf = new Dompdf\Dompdf();
+                $pdf->setPaper('A4', 'landscape');
+                $pdf->set_option('isRemoteEnabled', TRUE);
+                $pdf->set_option('isHtml5ParserEnabled', true);
+            
+                $pdf->loadHtml($html);
+                $pdf->render();
+                $pdf->stream('TiketWisata.pdf', ['Attachment' => false]);
+            }
+            
+
 }
 
 
