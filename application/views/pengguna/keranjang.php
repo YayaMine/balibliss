@@ -183,6 +183,21 @@ body {
     text-align: center; /* Teks tengah-tengah */
 }
 
+.btn-print {
+    background-color:rgb(11, 76, 229);
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    font-weight: 700; /* Font bold */
+}
+
+.btn-print:hover {
+    background-color:rgb(11, 76, 229);;
+}
+
     </style>
 </head>
 <body>
@@ -212,6 +227,7 @@ body {
                         </div>
                         <div class="card-small-footer">
                             <a href="#" data-id="<?= htmlspecialchars($item['id_pesanan'], ENT_QUOTES, 'UTF-8') ?>" class="btn-remove">Hapus Checkout</a>
+                            <a href="<?= site_url('Ctiket/cetakpdf/' . htmlspecialchars($item['id_pesanan'], ENT_QUOTES, 'UTF-8')); ?>" class="btn-print">Cetak Tiket</a>
                         </div>
                     </div>
                 <?php endforeach; ?>

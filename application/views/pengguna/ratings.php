@@ -142,7 +142,7 @@
             <form action="<?php echo site_url('Ctiket/add_review'); ?>" method="post">
                 <label for="id_wisata">Tiket Wisata:</label>
                 <select name="id_wisata" id="id_wisata" required>
-                    <option value="">Danau Beratan</option>
+                    <option value="">PILIH</option>
                     <?php foreach ($tickets as $ticket): ?>
                         <option value="<?php echo $ticket['id_wisata']; ?>"><?php echo $ticket['nama_wisata']; ?></option>
                     <?php endforeach; ?>
