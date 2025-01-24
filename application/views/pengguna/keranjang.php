@@ -227,7 +227,7 @@ body {
                         </div>
                         <div class="card-small-footer">
                             <a href="#" data-id="<?= htmlspecialchars($item['id_pesanan'], ENT_QUOTES, 'UTF-8') ?>" class="btn-remove">Hapus Checkout</a>
-                            <a href="<?= site_url('Ctiket/cetakpdf/' . htmlspecialchars($item['id_pesanan'], ENT_QUOTES, 'UTF-8')); ?>" class="btn-print">Cetak Tiket</a>
+                            <!-- <a href="<?= site_url('Ctiket/cetakpdf/' . htmlspecialchars($item['id_pesanan'], ENT_QUOTES, 'UTF-8')); ?>" class="btn-print">Cetak Tiket</a> -->
                         </div>
                     </div>
                 <?php endforeach; ?>
